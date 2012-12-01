@@ -1,0 +1,14 @@
+#!/bin/sh
+#-----------------------------------------------------------------------
+# mktake -- grab the frames from the latest run into a take directory
+#-----------------------------------------------------------------------
+
+last=`ls -dC1 take*|sed 's/take//'|sort -n|tail -1`
+
+next=take`expr $last + 1`
+echo $next
+
+set -x
+mkdir $next
+mv camera_* $next
+
