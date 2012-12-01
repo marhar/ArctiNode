@@ -4,6 +4,7 @@ var url = require("url");
 var path = require("path");  
 var fs = require("fs"); 
 var arDrone = require('/Users/mh/nodejs/lib/node_modules/ar-drone');
+var cv = require('/Users/mh/nodejs/lib/node_modules/opencv')
 
 var drone  = arDrone.createClient();
 var pngStream;
@@ -229,14 +230,41 @@ var server=http.createServer(function (req, res)
     pngStream
       .on('error', console.log)
       .on('data', function(pngBuffer) {
-         if(count%5==0)
+         if(count%50==0)
          {
            lastPng = pngBuffer;
+           var myfname = 'camera_'+count+'.png';
            fs.writeFile('camera.png', lastPng, function(error) {});
-           fs.writeFile('camera_'+count+'.png', lastPng, function(error) {});
-         }
-         count++;
-      }); 
+           fs.writeFile(myfname, lastPng, function(error) {
+             // if no error
+             if(!error)
+             {
+               // read with opencv
+               // detect
+               // write to face.png
+               console.log('myfname: '+myfname);
+
+               console.log('readImage: '+myfname);
+               cv.readImage(myfname, function(err, im) {
+                 if (!err) {
+                   console.log('detect');
+                   im.detectObject("/Users/mh/nodejs/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml", {}, function(err, faces){
+                   console.log('finish: '+err);
+                     if (!err) {
+                       for (var i=0;i<faces.length; i++){
+                         var x = faces[i]
+                         im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+                       }
+                       im.save('face.png');
+                     }
+                   });
+                }
+             });
+          }
+       });
+     }
+     count++;
+    });
   }   
   else
   {
@@ -530,7 +558,6 @@ function sendFile(uri,req, res)
     }
   });  
 }
-
 
 server.listen(8888, '127.0.0.1');
 
