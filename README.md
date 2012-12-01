@@ -36,11 +36,7 @@ NODEJS OPENCV
   - ?? export PKG_CONFIG_PATH=/Users/mh/nodejs/lib/pkgconfig
 
 ENV
-  export DYLD_LIBRARY_PATH=/Users/mh/nodejs/lib
-  export PATH=/Users/mh/nodejs/bin:$PATH
-  ?? export PKG_CONFIG_PATH=/Users/mh/nodejs/lib/pkgconfig
 
-PROGRAMS
-
-ardemo1.js
-ardemo2.js
+  - export DYLD_LIBRARY_PATH=/Users/mh/nodejs/lib
+  - export PATH=/Users/mh/nodejs/bin:$PATH
+  - ?? export PKG_CONFIG_PATH=/Users/mh/nodejs/lib/pkgconfig
