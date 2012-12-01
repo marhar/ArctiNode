@@ -6,6 +6,9 @@ var fs = require("fs");
 var arDrone = require('/Users/mh/nodejs/lib/node_modules/ar-drone');
 
 var drone  = arDrone.createClient();
+var pngStream;
+var lastPng;
+var facePng;
 
 var setPoint=1;
 var processVariable=0;
@@ -14,7 +17,7 @@ var processVariableDeltaSim=0;
 var outValue=0;
  
 
-var spFunc = function getSetPoint()	// target
+var spFunc = function getSetPoint() // target
 {
   return setPoint;
 } 
@@ -29,7 +32,7 @@ var outFunc = function setOutput(value) // output
 {
   outValue=value;
   console.log("out: "+value+" pv: "+processVariable);
-}     					 
+}                     
 
 var callComputeFunc = function callCompute()
 {
@@ -63,7 +66,7 @@ function PID_Controller(pG, iG, dG, pMax, pMin, oMax, oMin, pvFunc, spFunc, outF
   this.thread=null;
 }
  
-	
+   
 PID_Controller.prototype.enable = function()
 {
   this.reset();
@@ -80,7 +83,7 @@ PID_Controller.prototype.reset = function()
 {
   this.errSum = 0;
   this.lastUpdate = 0;
-}	
+}  
 
 PID_Controller.prototype.scaleValue = function(value, valuemin, valuemax, scalemin, scalemax)
 {
@@ -135,9 +138,9 @@ PID_Controller.prototype.compute = function()
     }
 
     if (dT != 0)
-	{
+   {
       dTerm = this.kd * (pv - this.lastPV) / dT;
-	}
+   }
   }
 
   this.lastUpdate = nowTime;
@@ -155,12 +158,13 @@ PID_Controller.prototype.compute = function()
   
   
   console.log("Time: "+this.lastUpdate+" Out: "+outReal+" Err: "+this.errSum);
-}	
+}  
 
 var pid=null;
    
 //pid=new PID_Controller(0.1, 0,  0, 1,      -1,    1,   -1, pvFunc, spFunc, outFunc, 1000);
 
+var count=100000;
 
 var server=http.createServer(function (req, res) 
 {
@@ -210,6 +214,30 @@ var server=http.createServer(function (req, res)
   {
     verticalAction(req, res);
   }   
+  else if(uri === "/rc") 
+  {
+    rcAction(req, res);
+  }   
+  else if(uri === "/reset") 
+  {
+    resetAction(req, res);
+  }
+  else if(uri === "/startVideoStream")
+  {
+    console.log("startVideoStream");
+    pngStream = arDrone.createPngStream();
+    pngStream
+      .on('error', console.log)
+      .on('data', function(pngBuffer) {
+         if(count%5==0)
+         {
+           lastPng = pngBuffer;
+           fs.writeFile('camera.png', lastPng, function(error) {});
+           fs.writeFile('camera_'+count+'.png', lastPng, function(error) {});
+         }
+         count++;
+      }); 
+  }   
   else
   {
     sendFile(uri,req, res);
@@ -225,6 +253,68 @@ function freezeAction(req, res)
   res.end()
 }
 
+function resetAction(req, res) 
+{
+  console.log("resetAction");
+  drone.disableEmergency();
+  res.writeHead(200, {'content-type': 'text/plain' });
+  res.end()
+}
+
+function rcAction(req, res) 
+{  
+  res.writeHead(200, {'content-type': 'text/plain' });
+  res.end()
+
+  var data = '';
+  req.addListener('data', function(chunk) { data += chunk; });
+  req.addListener('end', function() {
+    var o = JSON.parse(data);
+
+    console.log("rcAction yaw: "+o.yaw+" roll: "+o.roll+" pitch: "+o.pitch+" vertical: "+o.vertical);
+
+    if(o.yaw>=0)
+    {
+      drone.clockwise(o.yaw);
+    }
+    else
+    {
+      drone.counterClockwise(-1*o.yaw);
+    }
+
+    if(o.roll>=0)
+    {
+      drone.right(o.roll);
+    }
+    else
+    {
+      drone.left(-1*o.roll);
+    }
+
+    if(o.pitch>=0)
+    {
+      drone.front(o.pitch);
+    }
+    else
+    {
+      drone.back(-1*o.pitch);
+    }
+
+    if(o.vertical>=0)
+    {
+      drone.up(o.vertical);
+    }
+    else
+    {
+      drone.down(-1*o.vertical);
+    }
+
+    res.writeHead(200, {'content-type': 'text/plain' });
+    res.end()
+  });
+}
+
+
 function yawAction(req, res) 
 {  
   res.writeHead(200, {'content-type': 'text/plain' });
@@ -238,13 +328,13 @@ function yawAction(req, res)
     console.log("yawAction value: "+o.value);
 
     if(o.value>=0)
-	 {
-	   drone.clockwise(o.value);
-	 }
-	 else
-	 {
-		drone.counterClockwise(-1*o.value);
-	 }
+    {
+      drone.clockwise(o.value);
+    }
+    else
+    {
+      drone.counterClockwise(-1*o.value);
+    }
 
     res.writeHead(200, {'content-type': 'text/plain' });
     res.end()
@@ -253,81 +343,81 @@ function yawAction(req, res)
 
 function rollAction(req, res) 
 {
-	res.writeHead(200, {'content-type': 'text/plain' });
-	res.end()
+  res.writeHead(200, {'content-type': 'text/plain' });
+  res.end()
 
-	var data = '';
-	req.addListener('data', function(chunk) { data += chunk; });
-	req.addListener('end', function() {
-	  var o = JSON.parse(data);
+  var data = '';
+  req.addListener('data', function(chunk) { data += chunk; });
+  req.addListener('end', function() {
+    var o = JSON.parse(data);
 
-	  console.log("rollAction o.value: "+o.value);
+    console.log("rollAction o.value: "+o.value);
 
-	  if(o.value>=0)
-     {
-       drone.right(o.value);
-     }
-     else
-     {
-       drone.left(-1*o.value);
-     }
+    if(o.value>=0)
+    {
+      drone.right(o.value);
+    }
+    else
+    {
+      drone.left(-1*o.value);
+    }
 
-	  res.writeHead(200, {'content-type': 'text/plain' });
-	  res.end()
-	});
+    res.writeHead(200, {'content-type': 'text/plain' });
+    res.end()
+  });
 }
 
 function pitchAction(req, res) 
 {
-	res.writeHead(200, {'content-type': 'text/plain' });
-	res.end()
-
-	var data = '';
-	req.addListener('data', function(chunk) { data += chunk; });
-	req.addListener('end', function() {
-	  var o = JSON.parse(data);
-
-	  console.log("pitchAction o.value: "+o.value);
-
-	  if(o.value>=0)
-     {
-       drone.front(o.value);
-     }
-     else
-     {
-       drone.back(-1*o.value);
-     }
-
-	  res.writeHead(200, {'content-type': 'text/plain' });
-	  res.end()
-	});
+  res.writeHead(200, {'content-type': 'text/plain' });
+  res.end()
+  
+  var data = '';
+  req.addListener('data', function(chunk) { data += chunk; });
+  req.addListener('end', function() {
+    var o = JSON.parse(data);
+  
+    console.log("pitchAction o.value: "+o.value);
+  
+    if(o.value>=0)
+    {
+      drone.front(o.value);
+    }
+    else
+    {
+      drone.back(-1*o.value);
+    }
+  
+    res.writeHead(200, {'content-type': 'text/plain' });
+    res.end()
+  });
 }
 
 function verticalAction(req, res) 
 {
-	res.writeHead(200, {'content-type': 'text/plain' });
-	res.end()
-
-	var data = '';
-	req.addListener('data', function(chunk) { data += chunk; });
-	req.addListener('end', function() {
-	  var o = JSON.parse(data);
-
-	  console.log("verticalAction o.value: "+o.value);
-
-	  if(o.value>=0)
-     {
-       drone.up(o.value);
-     }
-     else
-     {
-       drone.down(-1*o.value);
-     }
-
-
-	  res.writeHead(200, {'content-type': 'text/plain' });
-	  res.end()
-	});
+  res.writeHead(200, {'content-type': 'text/plain' });
+  res.end()
+  
+  var data = '';
+  req.addListener('data', function(chunk) { data += chunk; });
+  req.addListener('end', function() {
+    var o = JSON.parse(data);
+  
+    console.log("verticalAction o.value: "+o.value);
+  
+    if(o.value>=0)
+    {
+      drone.up(o.value);
+    }
+    else
+    {
+      drone.down(-1*o.value);
+    }
+  
+  
+    res.writeHead(200, {'content-type': 'text/plain' });
+    res.end()
+  });
 }
 
 function takeoffAction(req, res) 
@@ -368,18 +458,15 @@ function startAction(req, res)
   req.addListener('data', function(chunk) { data += chunk; });
   req.addListener('end', function() {
     var o = JSON.parse(data);
-	 pid=new PID_Controller(o.pG, o.iG, o.dG, o.pMax, o.pMin, o.oMax, o.oMin, pvFunc, spFunc, outFunc, o.interval);
+    pid=new PID_Controller(o.pG, o.iG, o.dG, o.pMax, o.pMin, o.oMax, o.oMin, pvFunc, spFunc, outFunc, o.interval);
 
-	 setPoint=o.sp;
+    setPoint=o.sp;
     processVariable=o.pv;
     processVariableDeltaSim=o.pvDelta;
 
-	 //console.log("startAction data: "+data);
-	 //console.log("startAction object: "+o);
-	 //console.log("startAction o.pG: "+o.pG);
-	 console.log("startAction p gain: "+pid.kp);
+    console.log("startAction p gain: "+pid.kp);
 
-	 pid.enable();
+    pid.enable();
 
     res.writeHead(200, {'content-type': 'text/plain' });
     res.end()
@@ -393,11 +480,11 @@ function setState(req, res)
   req.addListener('end', function() {
     var o = JSON.parse(data);
 
-	 setPoint=o.sp;
+    setPoint=o.sp;
     processVariable=o.pv;
     processVariableDeltaSim=o.pvDelta;
 
-	 console.log("setState setPoint: "+setPoint);
+    console.log("setState setPoint: "+setPoint);
 
     res.writeHead(200, {'content-type': 'text/plain' });
     res.end()

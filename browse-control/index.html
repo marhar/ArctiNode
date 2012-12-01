@@ -1,20 +1,48 @@
 <!DOCTYPE html>  
 <html>  
-  <head>  
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>Arctic Node.js</title>  
-    <script src="/jquery.min.js"></script>  
+    <script src="jquery.min.js"></script>
+    <script src="virtualjoystick.js"></script> 
+    <style>
+        body {
+            overflow    : hidden;
+            padding     : 0;
+            margin      : 20px;
+        }
+        #container {
+            width       : 100%;
+            height      : 100%;
+            overflow    : hidden;
+            padding     : 0;
+            margin      : 0;
+            -webkit-user-select : none;
+            -moz-user-select    : none;
+        }
+        #container2 {
+            width       : 100%;
+            height      : 100%;
+            overflow    : hidden;
+            padding     : 0;
+            margin      : 0;
+            -webkit-user-select : none;
+            -moz-user-select    : none;
+        }
+     </style>
   </head>  
   <body>  
 
 <script type="text/javascript">  
   function getState() {  
       $.getJSON("/state", function(state) {  
-		  setValue("out",state.out);
-		  setValue("pvCurrent",state.pv);
+          setValue("out",state.out);
+          setValue("pvCurrent",state.pv);
       });  
   }  
   setInterval(getState, 1000);  
-	
+    
  
   function postAsJson(uri, data, callback) {
     $.ajax(uri, {
@@ -30,43 +58,43 @@
   {
     var obj=new Object();
     obj.pG=getValue("pG"), 
-	obj.iG=getValue("iG"),  
-	obj.dG=getValue("dG"), 
-	obj.pMax=getValue("pMax"),      
-	obj.pMin=getValue("pMin"),    
-	obj.oMax=getValue("oMax"),   
-	obj.oMin=getValue("oMin"), 
-	obj.interval=getValue("interval");
-	
-	obj.sp=getValue("sp");
+    obj.iG=getValue("iG"),  
+    obj.dG=getValue("dG"), 
+    obj.pMax=getValue("pMax"),      
+    obj.pMin=getValue("pMin"),    
+    obj.oMax=getValue("oMax"),   
+    obj.oMin=getValue("oMin"), 
+    obj.interval=getValue("interval");
+    
+    obj.sp=getValue("sp");
     obj.pv=getValue("pv");
     obj.pvDelta=getValue("pvDelta");
-	
-	postAsJson("/start",obj,null);
+    
+    postAsJson("/start",obj,null);
   }
   
   function setState()
   {
     var obj=new Object();
-	obj.sp=getValue("sp");
+    obj.sp=getValue("sp");
     obj.pv=getValue("pv");
     obj.pvDelta=getValue("pvDelta");
-	
-	postAsJson("/setState",obj,null);
+    
+    postAsJson("/setState",obj,null);
   }
 
 
   function stop()
   {
     var obj=new Object();
-	postAsJson("/stop",obj,null);
+    postAsJson("/stop",obj,null);
   }
 
   function getValue(id)
   {
     return Number(document.getElementById(id).value);
   }
-	
+    
   function setValue(id,value)
   {
     document.getElementById(id).value=value;
@@ -75,102 +103,124 @@
   function takeoff()
   {
     var obj=new Object();
-	postAsJson("/takeoff",obj,null);
+    postAsJson("/takeoff",obj,null);
   }
 
   function land()
   {
     var obj=new Object();
-	postAsJson("/land",obj,null);
+    postAsJson("/land",obj,null);
   }
 
   function freeze()
   {
     var obj=new Object();
-	postAsJson("/freeze",obj,null);
+    postAsJson("/freeze",obj,null);
+  }
+
+  function reset()
+  {
+    var obj=new Object();
+    postAsJson("/reset",obj,null);
   }
 
   function yaw()
   {
     var obj=new Object();
-	obj.value=getValue("yaw");
-	postAsJson("/yaw",obj,null);
+    obj.value=getValue("yaw");
+    postAsJson("/yaw",obj,null);
   }
 
   function roll()
   {
     var obj=new Object();
-	obj.value=getValue("roll");
-	postAsJson("/roll",obj,null);
+    obj.value=getValue("roll");
+    postAsJson("/roll",obj,null);
   }
 
   function pitch()
   {
     var obj=new Object();
-	obj.value=getValue("pitch");
-	postAsJson("/pitch",obj,null);
+    obj.value=getValue("pitch");
+    postAsJson("/pitch",obj,null);
   }
 
   function vertical()
   {
     var obj=new Object();
-	obj.value=getValue("vertical");
-	postAsJson("/vertical",obj,null);
+    obj.value=getValue("vertical");
+    postAsJson("/vertical",obj,null);
   }
 
   function stopYaw()
   {
     var obj=new Object();
-	obj.value=0;
-	postAsJson("/yaw",obj,null);
+    obj.value=0;
+    postAsJson("/yaw",obj,null);
   }
 
   function stopRoll()
   {
     var obj=new Object();
-	obj.value=0;
-	postAsJson("/roll",obj,null);
+    obj.value=0;
+    postAsJson("/roll",obj,null);
   }
 
   function stopPitch()
   {
     var obj=new Object();
-	obj.value=0;
-	postAsJson("/pitch",obj,null);
+    obj.value=0;
+    postAsJson("/pitch",obj,null);
   }
 
   function stopVertical()
   {
     var obj=new Object();
-	obj.value=0;
-	postAsJson("/vertical",obj,null);
+    obj.value=0;
+    postAsJson("/vertical",obj,null);
   }
 
-	  	
+  function startVideoStream()
+  {
+    var obj=new Object();
+    obj.value=0;
+    postAsJson("/startVideoStream",obj,null);
+
+    setInterval(function() 
+      {
+      var myImageElement = document.getElementById('cameraImage');
+      myImageElement.src = 'camera.png?rand=' + Math.random();
+    }, 1000);
+  }
+  
 </script>  
+
+
 <h1>Arctic Node.js</h1>  
+
+<table><tr><td>
 
 <table>
   <tr><td valign="top">
-	<table>
-	 <tr><td>pG</td>       <td><input id="pG" type="text" size="20" value="0.1"></td></tr>
-	 <tr><td>iG</td>       <td><input id="iG" type="text" size="20" value="0.00001"></td></tr>
-	 <tr><td>dG</td>       <td><input id="dG" type="text" size="20" value="0.00001"></td></tr>
-	 <tr><td>pMax</td>     <td><input id="pMax" type="text" size="20" value="1"></td></tr>
-	 <tr><td>pMin</td>     <td><input id="pMin" type="text" size="20" value="-1"></td></tr>
-	 <tr><td>oMax</td>     <td><input id="oMax" type="text" size="20" value="1"></td></tr>
-	 <tr><td>oMin</td>     <td><input id="oMin" type="text" size="20" value="-1"></td></tr>
+    <table>
+     <tr><td>pG</td>       <td><input id="pG" type="text" size="20" value="0.1"></td></tr>
+     <tr><td>iG</td>       <td><input id="iG" type="text" size="20" value="0.00001"></td></tr>
+     <tr><td>dG</td>       <td><input id="dG" type="text" size="20" value="0.00001"></td></tr>
+     <tr><td>pMax</td>     <td><input id="pMax" type="text" size="20" value="1"></td></tr>
+     <tr><td>pMin</td>     <td><input id="pMin" type="text" size="20" value="-1"></td></tr>
+     <tr><td>oMax</td>     <td><input id="oMax" type="text" size="20" value="1"></td></tr>
+     <tr><td>oMin</td>     <td><input id="oMin" type="text" size="20" value="-1"></td></tr>
      <tr><td>interval</td> <td><input id="interval" type="text" size="20" value="1000"></td></tr>
     </table>
     <a onClick="start();" href="#">Start</a> | <a onClick="stop();" href="#">Stop</a> 
   </td>
   <td valign="top">&nbsp;&nbsp;</td>
   <td valign="top">
-	<table>
-	 <tr><td>sv</td>       <td><input id="sp" type="text" size="20" value="1"></td></tr>
-	 <tr><td>pv</td>       <td><input id="pv" type="text" size="20" value="0"><input id="pvCurrent"  readonly="readonly" type="text" size="20" value="0"></td></tr>
-	 <tr><td>pv delta sim</td>       <td><input id="pvDelta" type="text" size="20" value="0.05"></td></tr>
-	 <tr><td>out</td>       <td><input id="out" readonly="readonly" type="text" size="20" value="0"></td></tr>
+    <table>
+     <tr><td>sv</td>       <td><input id="sp" type="text" size="20" value="1"></td></tr>
+     <tr><td>pv</td>       <td><input id="pv" type="text" size="20" value="0"><input id="pvCurrent"  readonly="readonly" type="text" size="20" value="0"></td></tr>
+     <tr><td>pv delta sim</td>       <td><input id="pvDelta" type="text" size="20" value="0.05"></td></tr>
+     <tr><td>out</td>       <td><input id="out" readonly="readonly" type="text" size="20" value="0"></td></tr>
     </table>
     <a onClick="setState();" href="#">Set State (sv,pv, pv delta)</a> 
   </td></tr>
@@ -179,23 +229,85 @@
 
 <br><br>
 
-<a onClick="takeoff();" href="#">Takeoff</a> | <a onClick="land();" href="#">Land</a> | <a onClick="freeze();" href="#">Freeze</a>
+<a onClick="takeoff();" href="#">Takeoff</a> | <a onClick="land();" href="#">Land</a> | <a onClick="freeze();" href="#">Freeze</a> | <a onClick="reset();" href="#">Reset Emergency Mode</a> | <a onClick="startVideoStream();" href="#">Start Video Stream</a>
 
 <br><br>
 
+<!--
 <input id="yaw" type="text" size="5" value="0.1"> <a onClick="yaw();" href="#">Yaw</a> | <a onClick="stopYaw();" href="#">Stop Yaw</a><br>
 <input id="roll" type="text" size="5" value="0.1"> <a onClick="roll();" href="#">Roll</a> | <a onClick="stopYaw();" href="#">Stop Roll</a><br>
 <input id="pitch" type="text" size="5" value="0.1"> <a onClick="pitch();" href="#">Pitch</a> | <a onClick="stopPitch();" href="#">Stop Pitch</a><br>
 <input id="vertical" type="text" size="5" value="0.1"> <a onClick="vertical();" href="#">Vertical</a> | <a onClick="stopVertical();" href="#">Stop Vertical</a>
+-->
 
-<div id="data"><div>
+<table width="500" border="1" style="table-layout: fixed; border-collapse:collapse;" cellpadding="10">
+  <tr>
+    <td height="230" style="overflow: hidden;"><div id="container"></div></td>
+    <td height="230" style="overflow: hidden;"><div id="container2"></div></td>
+  </tr>
+  <tr><td id="leftStickData"></td><td id="rightStickData"></td></tr>
+</table>
 
+</td><td>
 
-
-
-
-
+<img src="" id="cameraImage" width="640" height="360" alt=""/>
+</td></tr></table>
 
   
   </body>  
 </html>  
+
+
+<script>
+  var x1=0;
+  var y1=0;
+  var x2=0;
+  var y2=0;
+  
+  console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available");
+  var joystick2 = new VirtualJoystick({
+    container   : document.getElementById('container2'),
+    mouseSupport    : true,
+    xoffset : 200
+  });
+    
+  var joystick  = new VirtualJoystick({
+    container   : document.getElementById('container'),
+    mouseSupport    : true,
+    xoffset : 0
+  });
+
+  clamp = function(value, min, max)
+  {
+   if (value > max)return max;
+   if (value < min)return min;
+   return value;
+  }
+
+  
+  setInterval(function()
+  {
+    document.getElementById('leftStickData').innerHTML = ' Yaw:'+clamp(joystick.deltaX(),-100,100) + ' Vertical:'+clamp(-1*joystick.deltaY(),-100,100);
+    document.getElementById('rightStickData').innerHTML = ' Roll:'+clamp(joystick2.deltaX(),-100,100) + ' Pitch:'+clamp(-1*joystick2.deltaY(),-100,100);
+  
+    if(x1!=joystick.deltaX() ||
+       y1!=joystick.deltaY() ||
+       x2!=joystick2.deltaX() ||
+       y2!=joystick2.deltaY())
+	 {
+	   x1=joystick.deltaX();
+       y1=joystick.deltaY();
+       x2=joystick2.deltaX();
+       y2=joystick2.deltaY();
+	   
+       var obj=new Object();
+       obj.yaw=clamp(x1,-100,100)/100;
+       obj.vertical=clamp(-1*y1,-100,100)/100;
+       obj.roll=clamp(x2,-100,100)/100;
+       obj.pitch=clamp(-1*y2,-100,100)/100;
+	   
+       postAsJson("/rc",obj,null);    
+	 }    
+  }, 1/30 * 1000);
+</script>
+
