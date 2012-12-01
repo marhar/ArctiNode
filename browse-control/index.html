@@ -1,0 +1,201 @@
+<!DOCTYPE html>  
+<html>  
+  <head>  
+    <title>Arctic Node.js</title>  
+    <script src="/jquery.min.js"></script>  
+  </head>  
+  <body>  
+
+<script type="text/javascript">  
+  function getState() {  
+      $.getJSON("/state", function(state) {  
+		  setValue("out",state.out);
+		  setValue("pvCurrent",state.pv);
+      });  
+  }  
+  setInterval(getState, 1000);  
+	
+ 
+  function postAsJson(uri, data, callback) {
+    $.ajax(uri, {
+        type: 'POST',
+        data: JSON.stringify(data),
+        contentType: 'text/json',
+        success: function() { if ( callback ) callback(true); },
+        error  : function() { if ( callback ) callback(false); }
+    });
+  }
+      
+  function start()
+  {
+    var obj=new Object();
+    obj.pG=getValue("pG"), 
+	obj.iG=getValue("iG"),  
+	obj.dG=getValue("dG"), 
+	obj.pMax=getValue("pMax"),      
+	obj.pMin=getValue("pMin"),    
+	obj.oMax=getValue("oMax"),   
+	obj.oMin=getValue("oMin"), 
+	obj.interval=getValue("interval");
+	
+	obj.sp=getValue("sp");
+    obj.pv=getValue("pv");
+    obj.pvDelta=getValue("pvDelta");
+	
+	postAsJson("/start",obj,null);
+  }
+  
+  function setState()
+  {
+    var obj=new Object();
+	obj.sp=getValue("sp");
+    obj.pv=getValue("pv");
+    obj.pvDelta=getValue("pvDelta");
+	
+	postAsJson("/setState",obj,null);
+  }
+
+
+  function stop()
+  {
+    var obj=new Object();
+	postAsJson("/stop",obj,null);
+  }
+
+  function getValue(id)
+  {
+    return Number(document.getElementById(id).value);
+  }
+	
+  function setValue(id,value)
+  {
+    document.getElementById(id).value=value;
+  }
+
+  function takeoff()
+  {
+    var obj=new Object();
+	postAsJson("/takeoff",obj,null);
+  }
+
+  function land()
+  {
+    var obj=new Object();
+	postAsJson("/land",obj,null);
+  }
+
+  function freeze()
+  {
+    var obj=new Object();
+	postAsJson("/freeze",obj,null);
+  }
+
+  function yaw()
+  {
+    var obj=new Object();
+	obj.value=getValue("yaw");
+	postAsJson("/yaw",obj,null);
+  }
+
+  function roll()
+  {
+    var obj=new Object();
+	obj.value=getValue("roll");
+	postAsJson("/roll",obj,null);
+  }
+
+  function pitch()
+  {
+    var obj=new Object();
+	obj.value=getValue("pitch");
+	postAsJson("/pitch",obj,null);
+  }
+
+  function vertical()
+  {
+    var obj=new Object();
+	obj.value=getValue("vertical");
+	postAsJson("/vertical",obj,null);
+  }
+
+  function stopYaw()
+  {
+    var obj=new Object();
+	obj.value=0;
+	postAsJson("/yaw",obj,null);
+  }
+
+  function stopRoll()
+  {
+    var obj=new Object();
+	obj.value=0;
+	postAsJson("/roll",obj,null);
+  }
+
+  function stopPitch()
+  {
+    var obj=new Object();
+	obj.value=0;
+	postAsJson("/pitch",obj,null);
+  }
+
+  function stopVertical()
+  {
+    var obj=new Object();
+	obj.value=0;
+	postAsJson("/vertical",obj,null);
+  }
+
+	  	
+</script>  
+<h1>Arctic Node.js</h1>  
+
+<table>
+  <tr><td valign="top">
+	<table>
+	 <tr><td>pG</td>       <td><input id="pG" type="text" size="20" value="0.1"></td></tr>
+	 <tr><td>iG</td>       <td><input id="iG" type="text" size="20" value="0.00001"></td></tr>
+	 <tr><td>dG</td>       <td><input id="dG" type="text" size="20" value="0.00001"></td></tr>
+	 <tr><td>pMax</td>     <td><input id="pMax" type="text" size="20" value="1"></td></tr>
+	 <tr><td>pMin</td>     <td><input id="pMin" type="text" size="20" value="-1"></td></tr>
+	 <tr><td>oMax</td>     <td><input id="oMax" type="text" size="20" value="1"></td></tr>
+	 <tr><td>oMin</td>     <td><input id="oMin" type="text" size="20" value="-1"></td></tr>
+     <tr><td>interval</td> <td><input id="interval" type="text" size="20" value="1000"></td></tr>
+    </table>
+    <a onClick="start();" href="#">Start</a> | <a onClick="stop();" href="#">Stop</a> 
+  </td>
+  <td valign="top">&nbsp;&nbsp;</td>
+  <td valign="top">
+	<table>
+	 <tr><td>sv</td>       <td><input id="sp" type="text" size="20" value="1"></td></tr>
+	 <tr><td>pv</td>       <td><input id="pv" type="text" size="20" value="0"><input id="pvCurrent"  readonly="readonly" type="text" size="20" value="0"></td></tr>
+	 <tr><td>pv delta sim</td>       <td><input id="pvDelta" type="text" size="20" value="0.05"></td></tr>
+	 <tr><td>out</td>       <td><input id="out" readonly="readonly" type="text" size="20" value="0"></td></tr>
+    </table>
+    <a onClick="setState();" href="#">Set State (sv,pv, pv delta)</a> 
+  </td></tr>
+</table>
+
+
+<br><br>
+
+<a onClick="takeoff();" href="#">Takeoff</a> | <a onClick="land();" href="#">Land</a> | <a onClick="freeze();" href="#">Freeze</a>
+
+<br><br>
+
+<input id="yaw" type="text" size="5" value="0.1"> <a onClick="yaw();" href="#">Yaw</a> | <a onClick="stopYaw();" href="#">Stop Yaw</a><br>
+<input id="roll" type="text" size="5" value="0.1"> <a onClick="roll();" href="#">Roll</a> | <a onClick="stopYaw();" href="#">Stop Roll</a><br>
+<input id="pitch" type="text" size="5" value="0.1"> <a onClick="pitch();" href="#">Pitch</a> | <a onClick="stopPitch();" href="#">Stop Pitch</a><br>
+<input id="vertical" type="text" size="5" value="0.1"> <a onClick="vertical();" href="#">Vertical</a> | <a onClick="stopVertical();" href="#">Stop Vertical</a>
+
+<div id="data"><div>
+
+
+
+
+
+
+
+  
+  </body>  
+</html>  
