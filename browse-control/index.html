@@ -39,6 +39,11 @@
       $.getJSON("/state", function(state) {  
           setValue("out",state.out);
           setValue("pvCurrent",state.pv);
+          var imgEl=document.getElementById('cameraImage');
+          if(imgEl.src!=state.img)
+          {
+            imgEl.src=state.img;
+          }
       });  
   }  
   setInterval(getState, 1000);  
@@ -186,11 +191,11 @@
     obj.value=0;
     postAsJson("/startVideoStream",obj,null);
 
-    setInterval(function() 
-      {
-      var myImageElement = document.getElementById('cameraImage');
-      myImageElement.src = 'camera.png?rand=' + Math.random();
-    }, 1000);
+    //setInterval(function() 
+    //  {
+    //  var myImageElement = document.getElementById('cameraImage');
+    //  myImageElement.src = 'face.png?rand=' + Math.random();
+    //}, 1000);
   }
   
 </script>  
@@ -203,8 +208,8 @@
 <table>
   <tr><td valign="top">
     <table>
-     <tr><td>pG</td>       <td><input id="pG" type="text" size="20" value="0.1"></td></tr>
-     <tr><td>iG</td>       <td><input id="iG" type="text" size="20" value="0.00001"></td></tr>
+     <tr><td>pG</td>       <td><input id="pG" type="text" size="20" value="0.5"></td></tr>
+     <tr><td>iG</td>       <td><input id="iG" type="text" size="20" value="0.0001"></td></tr>
      <tr><td>dG</td>       <td><input id="dG" type="text" size="20" value="0.00001"></td></tr>
      <tr><td>pMax</td>     <td><input id="pMax" type="text" size="20" value="1"></td></tr>
      <tr><td>pMin</td>     <td><input id="pMin" type="text" size="20" value="-1"></td></tr>

@@ -1,15 +1,3 @@
-
-/takeoff
-/land
-/freeze
-/yaw
-/roll
-/pitch
-/vertical
-/rc
-/reset
-/startVideoStream
-
 H=http://localhost:8888
 
 alias a="curl >/dev/null -s $H/takeoff"
@@ -31,4 +19,4 @@ h : left
 l : right
 f : forward
 b : backward
-.
+.'

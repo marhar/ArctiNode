@@ -5,6 +5,12 @@ var path = require("path");
 var fs = require("fs"); 
 var arDrone = require('/Users/mh/nodejs/lib/node_modules/ar-drone');
 var cv = require('/Users/mh/nodejs/lib/node_modules/opencv')
+var exec = require('child_process').exec;
+var lastCamFile;
+var lastProcessed;
+var intervalSinceLastGood = 0;
+
+var SCREENWID2 = 320;
 
 var drone  = arDrone.createClient();
 var pngStream;
@@ -16,7 +22,7 @@ var processVariable=0;
 
 var processVariableDeltaSim=0;
 var outValue=0;
- 
+var pidActive = false; 
 
 var spFunc = function getSetPoint() // target
 {
@@ -25,7 +31,7 @@ var spFunc = function getSetPoint() // target
 
 var pvFunc = function getProcessVariable() // current
 {
-  processVariable+=(processVariableDeltaSim*outValue);
+  //processVariable+=(processVariableDeltaSim*outValue);
   return processVariable;
 } 
 
@@ -71,13 +77,15 @@ function PID_Controller(pG, iG, dG, pMax, pMin, oMax, oMin, pvFunc, spFunc, outF
 PID_Controller.prototype.enable = function()
 {
   this.reset();
-  this.thread=setInterval(callComputeFunc,this.interval);
+  //this.thread=setInterval(callComputeFunc,this.interval);
+  pidActive = true;
 }
 
 PID_Controller.prototype.disable = function()
 {
-  clearInterval(this.thread);
-  this.thread=null;
+  //clearInterval(this.thread);
+  //this.thread=null;
+  pidActive = false;
 }
 
 PID_Controller.prototype.reset = function()
@@ -230,37 +238,17 @@ var server=http.createServer(function (req, res)
     pngStream
       .on('error', console.log)
       .on('data', function(pngBuffer) {
-         if(count%50==0)
+         if(count%3==0)
          {
            lastPng = pngBuffer;
            var myfname = 'camera_'+count+'.png';
-           fs.writeFile('camera.png', lastPng, function(error) {});
+           var myoutname = 'out_camera_'+count+'.png';
            fs.writeFile(myfname, lastPng, function(error) {
              // if no error
-             if(!error)
-             {
-               // read with opencv
-               // detect
-               // write to face.png
-               console.log('myfname: '+myfname);
-
-               console.log('readImage: '+myfname);
-               cv.readImage(myfname, function(err, im) {
-                 if (!err) {
-                   console.log('detect');
-                   im.detectObject("/Users/mh/nodejs/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml", {}, function(err, faces){
-                   console.log('finish: '+err);
-                     if (!err) {
-                       for (var i=0;i<faces.length; i++){
-                         var x = faces[i]
-                         im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
-                       }
-                       im.save('face.png');
-                     }
-                   });
-                }
-             });
-          }
+             if(!error) {
+                 lastCamFile=myfname;
+                 exec("node detect-face.js "+myfname+" "+myoutname, readCoords);
+             }
        });
      }
      count++;
@@ -272,6 +260,40 @@ var server=http.createServer(function (req, res)
   }
 
 });
+
+function readCoords(err, stdout, stderr)
+{
+    var a=stdout.split(" ");
+    if (a.length == 4 && a[0] === "found") {
+
+        processVariable = 0;
+        var x = Number(a[1]);
+        setPoint = (x - SCREENWID2) / SCREENWID2;
+        if (pidActive) {
+            pid.compute();
+            if(outValue>=0)
+            {
+              console.log("CW "+x+" "+setPoint+" "+outValue);
+              drone.clockwise(outValue);
+            }
+            else
+            {
+              console.log("CC "+x+" "+setPoint+" "+outValue);
+              drone.counterClockwise(-1*outValue);
+            }
+        }
+        intervalSinceLastGood = 0;
+    }
+    else if (pidActive) {
+        // if we're active and don't get a face pos we need to stop
+        intervalSinceLastGood++;
+        if (intervalSinceLastGood > 1) {
+            drone.clockwise(0);
+        }
+    }
+    
+    if(a.length > 0)lastProcessed=a[a.length-1];
+}
 
 function freezeAction(req, res) 
 {
@@ -473,8 +495,8 @@ function stopAction(req, res)
     pid.disable();
   }
 
+  drone.stop();
   console.log("stopAction");
-
 
   res.writeHead(200, {'content-type': 'text/plain' });
   res.end()
@@ -524,8 +546,9 @@ function sendState(req, res)
   res.writeHead(200, { "Content-Type" : "text/plain" });  
   
   var obj=new Object();
-  obj.pv=processVariable, 
-  obj.out=outValue,  
+  obj.pv=processVariable; 
+  obj.out=outValue;
+  obj.img=lastProcessed;
   
   res.end(JSON.stringify(obj)); 
 }

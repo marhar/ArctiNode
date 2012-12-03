@@ -11,4 +11,5 @@ echo $next
 set -x
 mkdir $next
 mv camera_* $next
+mv out_camera_* $next
 
